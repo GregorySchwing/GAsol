@@ -678,7 +678,7 @@ int main( int argc, char *argv[])
 
 		/* Only parallelized for individuals */
         #pragma omp parallel for \
-                    private(nind,i,j,k,current_g,d1,d2,p2,w_sum,e,penalty,p6,d6, bad_w, dx, dy, dz) \
+                    private(nind,i,j,k,current_g,d1,d2,p2,w_sum,e,penalty,p6,d6, bad_w) \
                     shared(g, forbid_combination,max_ind, fitness, lines, current_point, all_g, x_index, y_index, z_index, points_radii ) \
                     schedule(dynamic) 
                 for( nind = 0 ; nind < max_ind; nind++) /* Evaluate population */
@@ -734,7 +734,14 @@ int main( int argc, char *argv[])
 		// wrap raw pointer with a device_ptr 
     	thrust::device_ptr<double> fitness_ptr = thrust::device_pointer_cast(gsm.d_fitness);
 		thrust::device_vector<double> fitness_dev_vector(fitness_ptr, fitness_ptr + max_ind);           // from iterator range
-		thrust::host_vector<double> fitness_host_vector(fitness, fitness + max_ind);           // from iterator range
+		thrust::host_vector<double> fitness_host_vector(fitness, fitness + max_ind); 
+		thrust::host_vector<double> fitness_dev_vector_h; 
+		fitness_dev_vector_h.resize(max_ind);
+		fitness_dev_vector_h=fitness_dev_vector;
+		for (int xxx = 0; xxx < max_ind; ++xxx)
+			if (fitness_dev_vector_h[xxx]!=fitness_host_vector[xxx])
+				printf("%f %f\n",fitness_dev_vector_h[xxx],fitness_host_vector[xxx]);
+          // from iterator range
 		assert(fitness_host_vector==fitness_dev_vector);
 		printf("PASS GEN %d\n",ngen);
 		exit(1);

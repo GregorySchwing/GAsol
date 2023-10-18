@@ -37,9 +37,9 @@ __global__ void evaluatePopulationKernel(double *fitness, int max_ind, int curre
             }
 
             penalty *= p2;
-            e *= pow(d1, w[0]);
-            e *= pow(d2, w[1]);
-            e = pow(e, 1.0 / w_sum);
+            e *= powf(d1, w[0]);
+            e *= powf(d2, w[1]);
+            e = powf(e, 1.0 / w_sum);
             penalty = p2 - 0.0001;
             e -= penalty;
             fitness[nind] = e;

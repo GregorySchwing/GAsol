@@ -34,14 +34,14 @@ public:
         cudaMalloc((void**)&d_max_g, n_points * sizeof(float));
         cudaMalloc((void**)&d_points_radii, current_point * sizeof(float));
 
-        cudaMalloc((void**)&d_forbid_combination, current_point * current_point * sizeof(int*));
+        cudaMalloc((void**)&d_forbid_combination, current_point * current_point * sizeof(int));
 
         for (int i = 0; i < current_point; i++) {
             cudaMemcpy(&d_forbid_combination[i], h_forbid_combination[i], current_point * sizeof(int), cudaMemcpyHostToDevice);
         }
 
 
-        cudaMalloc((void**)&d_population, max_ind * (current_point+1) * sizeof(int*));
+        cudaMalloc((void**)&d_population, max_ind * (current_point+1) * sizeof(int));
 
         for (int i = 0; i < current_point; i++) {
             cudaMemcpy(&d_population[i], h_population[i], current_point+1 * sizeof(int), cudaMemcpyHostToDevice);
