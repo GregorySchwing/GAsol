@@ -2,7 +2,7 @@
 #define GASOLDEVICEMEMORY
 
 #include <cuda_runtime.h>
-
+#include <cassert>
 class GasolDeviceMemory {
 public:
     GasolDeviceMemory() {
@@ -37,15 +37,36 @@ public:
         cudaMalloc((void**)&d_forbid_combination, current_point * current_point * sizeof(int));
 
         for (int i = 0; i < current_point; i++) {
-            cudaMemcpy(&d_forbid_combination[i], h_forbid_combination[i], current_point * sizeof(int), cudaMemcpyHostToDevice);
+            cudaMemcpy(&d_forbid_combination[i*current_point], h_forbid_combination[i], current_point * sizeof(int), cudaMemcpyHostToDevice);
         }
-
 
         cudaMalloc((void**)&d_population, max_ind * (current_point+1) * sizeof(int));
 
-        for (int i = 0; i < current_point; i++) {
-            cudaMemcpy(&d_population[i], h_population[i], current_point+1 * sizeof(int), cudaMemcpyHostToDevice);
+        for (int i = 0; i < max_ind; i++) {
+            cudaMemcpy(&d_population[i*(current_point+1)], h_population[i], current_point+1 * sizeof(int), cudaMemcpyHostToDevice);
         }
+
+        
+
+        int * forbid_combination = (int *) calloc(sizeof(int), current_point*current_point);
+        int * population = (int *) calloc(sizeof(int), max_ind * (current_point+1));
+
+        for (int i = 0; i < current_point; i++) {
+            memcpy(&forbid_combination[i*current_point], h_forbid_combination[i], current_point * sizeof(int));
+        }
+
+        for (int i = 0; i < max_ind; i++) {
+            memcpy(&population[i*(current_point+1)], h_population[i], current_point+1 * sizeof(int));
+        }
+
+        for (int i = 0; i < current_point; i++) 
+            for (int j = 0; j < current_point; ++j)
+                assert(forbid_combination[i*(current_point) + j]==h_forbid_combination[i][j]);
+        
+        for (int i = 0; i < max_ind; i++) 
+            for (int j = 0; j < (current_point+1); ++j)
+                assert(population[i*(current_point+1) + j]==h_forbid_combination[i][j]);
+        
 
         cudaMemcpy(d_fitness, h_fitness, max_ind * sizeof(double), cudaMemcpyHostToDevice);
         cudaMemcpy(d_x_index, h_x_index, n_points * sizeof(int), cudaMemcpyHostToDevice);

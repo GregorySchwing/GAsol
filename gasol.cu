@@ -540,7 +540,7 @@ int main( int argc, char *argv[])
 			}
 		}
 	}
-    	points_radii = (float *) calloc(sizeof(float),current_point);
+    points_radii = (float *) calloc(sizeof(float),current_point);
 	forbid_combination = (int **) calloc(sizeof(int *), current_point);
 	for( i = 0; i < current_point; i++)
 	{
