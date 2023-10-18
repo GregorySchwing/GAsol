@@ -56,7 +56,7 @@ public:
         }
 
         for (int i = 0; i < max_ind; i++) {
-            memcpy(&population[i*(current_point+1)], h_population[i], current_point+1 * sizeof(int));
+            memcpy(&population[i*(current_point+1)], h_population[i], (current_point+1) * sizeof(int));
         }
 
         for (int i = 0; i < current_point; i++) 
@@ -65,7 +65,7 @@ public:
         
         for (int i = 0; i < max_ind; i++) 
             for (int j = 0; j < (current_point+1); ++j)
-                assert(population[i*(current_point+1) + j]==h_forbid_combination[i][j]);
+                assert(population[i*(current_point+1) + j]==h_population[i][j]);
         
 
         cudaMemcpy(d_fitness, h_fitness, max_ind * sizeof(double), cudaMemcpyHostToDevice);
