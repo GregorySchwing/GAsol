@@ -46,6 +46,4 @@ __global__ void evaluatePopulationKernel(double *fitness, int max_ind, int curre
         }
     }
 }
-
-
 #endif

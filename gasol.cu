@@ -69,6 +69,8 @@ Please send any feedback to alvaro.x.cortes@gsk.com
 
 #include "GasolDeviceMemory.h"
 #include "GasolCUDAKernels.cuh"
+#include "MaxFitness.cuh"
+
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/device_ptr.h>
@@ -636,6 +638,10 @@ int main( int argc, char *argv[])
 	if( max_ind == 0)
    	  max_ind = current_point * 10;
 
+		// Define block and grid dimensions
+		int block_size = 256; // You can adjust this value based on your GPU's capabilities
+		int grid_size = (max_ind + block_size - 1) / block_size;
+
         /* Initialize random population */
         population = (int **) calloc(sizeof(int *), max_ind);
         offspring = (int **) calloc(sizeof(int *), max_ind+1);
@@ -663,13 +669,10 @@ int main( int argc, char *argv[])
 
 	GasolDeviceMemory gsm;
 	gsm.allocateAndCopyToDevice(fitness,x_index, y_index, z_index, g, max_g, points_radii,
-								forbid_combination, population, n_points, current_point, max_ind);
+								forbid_combination, population, n_points, current_point, max_ind, grid_size);
 
 	/* Generations loop */
 	/* TODO: check for convergence!! */
-	// Define block and grid dimensions
-    int block_size = 256; // You can adjust this value based on your GPU's capabilities
-    int grid_size = (max_ind + block_size - 1) / block_size;
 
         for( ngen = 0; ngen < max_ngen; ngen++)
         {
@@ -732,7 +735,8 @@ int main( int argc, char *argv[])
 		   			} /* Fitness */
                 } /* Individuals loop */
 		// wrap raw pointer with a device_ptr 
-    	thrust::device_ptr<double> fitness_ptr = thrust::device_pointer_cast(gsm.d_fitness);
+    	/*
+		thrust::device_ptr<double> fitness_ptr = thrust::device_pointer_cast(gsm.d_fitness);
 		thrust::device_vector<double> fitness_dev_vector(fitness_ptr, fitness_ptr + max_ind);           // from iterator range
 		thrust::host_vector<double> fitness_host_vector(fitness, fitness + max_ind); 
 		thrust::host_vector<double> fitness_dev_vector_h; 
@@ -744,15 +748,21 @@ int main( int argc, char *argv[])
           // from iterator range
 		assert(fitness_host_vector==fitness_dev_vector);
 		printf("PASS GEN %d\n",ngen);
-		exit(1);
+		*/
 		/* Update best solution */
-                for( i = 0; i < max_ind; ++i)
+		max_idx_kernel<<<MIN(MAX_KERNEL_BLOCKS, ((max_ind+nTPB-1)/nTPB)), nTPB>>>(gsm.d_fitness, max_ind, gsm.d_max_index);
+        int max_d = -1; 
+		cudaMemcpy(&max_d, gsm.d_max_index, sizeof(int), cudaMemcpyDeviceToHost);
+  
+         int max_h = -1;           
+				for( i = 0; i < max_ind; ++i)
                 {
                         if ( fitness[i] > best_fitness)
                         {
 #ifdef DEBUG
                                 fprintf(stderr,"New Fitness: %f\n",fitness[i]);
-#endif
+#endif	
+								max_h = i;
                                 best_fitness = fitness[i];
                                 for( j = 0; j < current_point; j++)
                                 {
@@ -769,7 +779,8 @@ int main( int argc, char *argv[])
                 }
                 fprintf(stderr,"Iteration %i. Best fitness so far: %f\r",ngen,best_fitness);
                 fflush(stderr);
-
+				printf("%d %d\n",max_d,max_h);
+				assert(max_d==max_h);
 
 
                 /* Selection round with 3 inidivuals at the same time */

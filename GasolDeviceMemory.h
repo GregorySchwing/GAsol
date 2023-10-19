@@ -15,17 +15,21 @@ public:
         d_points_radii = nullptr;
         d_forbid_combination = nullptr;
         d_population = nullptr;
+        d_max_index = nullptr;
     }
 
     ~GasolDeviceMemory() {
         freeDeviceMemory();
     }
 
-    void allocateAndCopyToDevice(double *h_fitness, int *h_x_index, int *h_y_index, int *h_z_index, float *h_g, float *h_max_g, float *h_points_radii, int **h_forbid_combination, int** h_population, int n_points, int h_current_point, int h_max_ind) {
+    void allocateAndCopyToDevice(double *h_fitness, int *h_x_index, int *h_y_index, int *h_z_index, float *h_g, float *h_max_g, float *h_points_radii, int **h_forbid_combination, int** h_population, int n_points, int h_current_point, int h_max_ind, int h_grid_size) {
         current_point = h_current_point;
         max_ind = h_max_ind;
+        grid_size = h_grid_size;
+
         freeDeviceMemory();
 
+        cudaMalloc((void**)&d_max_index, grid_size * sizeof(int));
         cudaMalloc((void**)&d_fitness, max_ind * sizeof(double));
         cudaMalloc((void**)&d_x_index, n_points * sizeof(int));
         cudaMalloc((void**)&d_y_index, n_points * sizeof(int));
@@ -43,7 +47,7 @@ public:
         cudaMalloc((void**)&d_population, max_ind * (current_point+1) * sizeof(int));
 
         for (int i = 0; i < max_ind; i++) {
-            cudaMemcpy(&d_population[i*(current_point+1)], h_population[i], current_point+1 * sizeof(int), cudaMemcpyHostToDevice);
+            cudaMemcpy(&d_population[i*(current_point+1)], h_population[i], (current_point+1) * sizeof(int), cudaMemcpyHostToDevice);
         }
 
         
@@ -80,6 +84,7 @@ public:
     // Add any other member functions and data members as needed
     int current_point;
     int max_ind;
+    int grid_size;
     double* d_fitness;
     int* d_x_index;
     int* d_y_index;
@@ -89,11 +94,13 @@ public:
     float* d_points_radii;
     int* d_forbid_combination;
     int* d_population;
+    int* d_max_index;
 
 private:
 
 
     void freeDeviceMemory() {
+        if (d_max_index) cudaFree(d_max_index);
         if (d_fitness) cudaFree(d_fitness);
         if (d_x_index) cudaFree(d_x_index);
         if (d_y_index) cudaFree(d_y_index);
