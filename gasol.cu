@@ -750,6 +750,7 @@ int main( int argc, char *argv[])
 		printf("PASS GEN %d\n",ngen);
 		*/
 		/* Update best solution */
+		resetDeviceVariable<<<1, 1>>>(0); // Launch the kernel
 		max_idx_kernel<<<MIN(MAX_KERNEL_BLOCKS, ((max_ind+nTPB-1)/nTPB)), nTPB>>>(gsm.d_fitness, max_ind, gsm.d_max_index);
         int max_d = -1; 
 		cudaMemcpy(&max_d, gsm.d_max_index, sizeof(int), cudaMemcpyDeviceToHost);
