@@ -71,6 +71,9 @@ Please send any feedback to alvaro.x.cortes@gsk.com
 #include "GasolCUDAKernels.cuh"
 #include "MaxFitness.cuh"
 
+#include "Random123Wrapper.h"
+
+
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/device_ptr.h>
@@ -670,7 +673,8 @@ int main( int argc, char *argv[])
 	GasolDeviceMemory gsm;
 	gsm.allocateAndCopyToDevice(fitness,x_index, y_index, z_index, g, max_g, points_radii,
 								forbid_combination, population, n_points, current_point, max_ind, grid_size);
-
+	Random123Wrapper r123wrapper;
+	r123wrapper.SetRandomSeed(seed);
 	/* Generations loop */
 	/* TODO: check for convergence!! */
 
@@ -780,16 +784,22 @@ int main( int argc, char *argv[])
                 }
                 fprintf(stderr,"Iteration %i. Best fitness so far: %f\r",ngen,best_fitness);
                 fflush(stderr);
-				printf("%d %d\n",max_d,max_h);
-				assert(max_d==max_h);
+				//printf("%d %d\n",max_d,max_h);
+				//assert(max_d==max_h);
 
-
+				// reset the key, because next move has different step number uk[0] = step!
+				r123wrapper.SetKey(ngen);
                 /* Selection round with 3 inidivuals at the same time */
                 for( i = 0; i < max_ind; ++i)
                 {
-                        t1 = rand_interval(0,max_ind-1);
-                        t2 = rand_interval(0,max_ind-1);
-                        t3 = rand_interval(0,max_ind-1);
+						r123wrapper.SetStep(i);
+						t1 = r123wrapper(0)*(max_ind-1);
+						t2 = r123wrapper(1)*(max_ind-1);
+						t3 = r123wrapper(2)*(max_ind-1);
+                        //t1 = rand_interval(0,max_ind-1);
+                        //t2 = rand_interval(0,max_ind-1);
+                        //t3 = rand_interval(0,max_ind-1);
+						if (i < 2)
                         best_t = t1;
                         if( fitness[t1] > fitness[t2])
                             best_t = t1;
@@ -810,12 +820,16 @@ int main( int argc, char *argv[])
                 for( c1 = 1; c1 < max_ind; c1 = c1 + 2)
                 {
                         c2 = c1 - 1;
-                        if( r2() < 0.5)
+						r123wrapper.SetStep(c1);
+                        if( r123wrapper(3) < 0.5)
+                        //if( r2() < 0.5)
                         {
                                 new_fitness[c1] = -2;
                                 new_fitness[c2] = -2;
-                                cxpoint1 = rand_interval(0, current_point);
-                                cxpoint2 = rand_interval(0, current_point);
+                                //cxpoint1 = rand_interval(0, current_point);
+                                //cxpoint2 = rand_interval(0, current_point);
+								cxpoint1 = r123wrapper(4)*(current_point);
+								cxpoint2 = r123wrapper(5)*(current_point);
                                 if (cxpoint2 >= cxpoint1)
                                     cxpoint2 += 1;
                                 else{
@@ -837,12 +851,16 @@ int main( int argc, char *argv[])
                 /* Mutation */
                 for( c1 = 0; c1 < max_ind; c1++)
                 {
-                        if( r2() < 0.2)
+						r123wrapper.SetStep(c1);
+                        //if( r2() < 0.2)
+                        if( r123wrapper(6) < 0.2)
                         {
                                 new_fitness[c1] = -2;
                                 for( i = 0; i < current_point; i++)
                                 {
-                                        if( r2() < 0.05)
+										r123wrapper.SetStep(i);
+                                        //if( r2() < 0.05
+										if( r123wrapper(7) < 0.05)
                                         {
                                                 if( offspring[c1][i] == 0)
                                                     offspring[c1][i] = 1;
@@ -913,7 +931,7 @@ int main( int argc, char *argv[])
 	free(g); free(max_g);
 
 	free(fitness); free(best_ever); free(new_fitness);
-	for( i = 0; i < nind; i++)
+	for( i = 0; i < max_ind; i++)
 	{
 		free(population[i]);
 		free(offspring[i]);
