@@ -69,3 +69,11 @@ __global__ void max_idx_kernel(const T *data, const int dsize, int *result){
       *result = idxs[0];
     }
 }
+
+__global__ void updatePopulationKernel(double* fitness, double* best_fitness, int* max_index, int current_point, int* best_ever, int* population) {
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    if (tid < current_point && fitness[*max_index] > *best_fitness) {
+      *best_fitness = fitness[*max_index];
+      best_ever[tid] = population[(*max_index)*(current_point+1)+tid];
+    }
+}

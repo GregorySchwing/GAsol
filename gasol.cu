@@ -758,7 +758,7 @@ int main( int argc, char *argv[])
 		max_idx_kernel<<<MIN(MAX_KERNEL_BLOCKS, ((max_ind+nTPB-1)/nTPB)), nTPB>>>(gsm.d_fitness, max_ind, gsm.d_max_index);
         int max_d = -1; 
 		cudaMemcpy(&max_d, gsm.d_max_index, sizeof(int), cudaMemcpyDeviceToHost);
-  
+  		updatePopulationKernel<<<MIN(MAX_KERNEL_BLOCKS, ((max_ind+nTPB-1)/nTPB)), nTPB>>>(gsm.d_fitness, gsm.d_best_fitness, gsm.d_max_index, current_point,gsm.d_best_ever,gsm.d_population);
          int max_h = -1;           
 				for( i = 0; i < max_ind; ++i)
                 {
@@ -784,8 +784,11 @@ int main( int argc, char *argv[])
                 }
                 fprintf(stderr,"Iteration %i. Best fitness so far: %f\r",ngen,best_fitness);
                 fflush(stderr);
-				//printf("%d %d\n",max_d,max_h);
-				//assert(max_d==max_h);
+				double best_fitness_d = -1.0f; 
+				cudaMemcpy(&best_fitness_d, gsm.d_best_fitness, sizeof(double), cudaMemcpyDeviceToHost);
+				printf("%d %d\n",max_d,max_h);
+				printf("%f %f\n",best_fitness_d,best_fitness);
+				assert(best_fitness_d==best_fitness);
 
 				// reset the key, because next move has different step number uk[0] = step!
 				r123wrapper.SetKey(ngen);

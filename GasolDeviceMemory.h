@@ -16,6 +16,8 @@ public:
         d_forbid_combination = nullptr;
         d_population = nullptr;
         d_max_index = nullptr;
+        d_best_ever = nullptr;
+        d_best_fitness = nullptr;
     }
 
     ~GasolDeviceMemory() {
@@ -37,6 +39,10 @@ public:
         cudaMalloc((void**)&d_g, n_points * sizeof(float));
         cudaMalloc((void**)&d_max_g, n_points * sizeof(float));
         cudaMalloc((void**)&d_points_radii, current_point * sizeof(float));
+        cudaMalloc((void**)&d_best_ever, current_point * sizeof(int));
+        cudaMalloc((void**)&d_best_fitness, sizeof(double));
+
+
 
         cudaMalloc((void**)&d_forbid_combination, current_point * current_point * sizeof(int));
 
@@ -79,6 +85,10 @@ public:
         cudaMemcpy(d_g, h_g, n_points * sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_max_g, h_max_g, n_points * sizeof(float), cudaMemcpyHostToDevice);
         cudaMemcpy(d_points_radii, h_points_radii, current_point * sizeof(float), cudaMemcpyHostToDevice);
+        double initValue = -999.0;
+        cudaMemcpy(d_best_fitness, &initValue, sizeof(double), cudaMemcpyHostToDevice);
+
+
     }
 
     // Add any other member functions and data members as needed
@@ -95,6 +105,8 @@ public:
     int* d_forbid_combination;
     int* d_population;
     int* d_max_index;
+    int* d_best_ever;
+    double *d_best_fitness;
 
 private:
 
@@ -110,6 +122,8 @@ private:
         if (d_points_radii) cudaFree(d_points_radii);
         if (d_forbid_combination) cudaFree(d_forbid_combination);
         if (d_population) cudaFree(d_population);
+        if (d_best_ever) cudaFree(d_best_ever);
+        if (d_best_fitness) cudaFree(d_best_fitness);
     }
 };
 
